@@ -3,7 +3,7 @@ import { ToastContainer, toast } from 'react-toastify';
 import { AppStyle } from 'components/App.styled';
 import { Searchbar } from './Searchbar/Searchbar';
 import { ImageGallery } from './ImageGallery/ImageGallery';
-import { Component } from 'react';
+import { useEffect, useState } from 'react';
 import { fetchImages } from 'services/Api';
 import { Button } from './Button/Button';
 import { Loader } from './Loader/Loader';
@@ -19,71 +19,60 @@ const toastConfig = {
   theme: 'dark',
 };
 
-export class App extends Component {
-  state = {
-    searchValue: '',
-    hits: [],
-    isLoading: false,
-    currentPage: 1,
-    total: 0,
-    error: false,
+export const App = () => {
+  const [searchValue, setSearchValue] = useState('');
+  const [hits, setHits] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [error, setError] = useState(false);
+
+  const handleSearchFormSubmit = searchValue => {
+    setSearchValue(searchValue);
+    setHits([]);
+    setCurrentPage(1);
   };
 
-  handleSearchFormSubmit = searchValue => {
-    this.setState({ searchValue, hits: [], currentPage: 1 });
+  const onLoadMore = () => {
+    setCurrentPage(currentPage + 1);
   };
 
-  onLoadMore = () => {
-    this.setState(prevState => ({
-      currentPage: prevState.currentPage + 1,
-    }));
-  };
-
-  async componentDidUpdate(prevProps, prevState) {
-    if (
-      this.state.currentPage !== prevState.currentPage ||
-      this.state.searchValue !== prevState.searchValue
-    ) {
+  useEffect(() => {
+    const fetchHits = async () => {
+      if (searchValue.trim() === '') {
+        return;
+      }
       try {
-        const { hits, totalHits } = await fetchImages(
-          this.state.searchValue,
-          this.state.currentPage
-        );
+        const { hits, totalHits } = await fetchImages(searchValue, currentPage);
         if (hits.length === 0) {
           return toast.error('Sorry images not found...', toastConfig);
         }
-        this.setState(prevState => ({
-          hits: [...prevState.hits, ...hits],
-          total: totalHits,
-          isLoading: false,
-        }));
+        setHits(prevHits => [...prevHits, ...hits]);
+        setTotal(totalHits);
+        setIsLoading(false);
         toast.success('Your posts were successfully fetched!', toastConfig);
       } catch (error) {
-        this.setState({ error: error.message });
+        setError(error.message);
         toast.error(error.message, toastConfig);
       } finally {
-        this.setState({ isLoading: false });
+        setIsLoading(false);
       }
-    }
-  }
+    };
+    fetchHits();
+  }, [searchValue, currentPage]);
 
-  render() {
-    const { isLoading, error, total, hits } = this.state;
-    const totalPages = total / hits.length;
-    return (
-      <AppStyle>
-        <Searchbar
-          onSubmit={this.handleSearchFormSubmit}
-          toastConfig={toastConfig}
-        />
-        {error && toast.error('Something went wrong...')}
-        {this.state.hits && <ImageGallery hits={this.state.hits} />}
-        {totalPages > 1 && !isLoading && hits.length >= 12 && (
-          <Button onLoadMore={this.onLoadMore} />
-        )}
-        <ToastContainer />
-        {this.state.isLoading && <Loader />}
-      </AppStyle>
-    );
-  }
-}
+  // const { isLoading, error, total, hits } = state;
+  const totalPages = total / hits.length;
+  return (
+    <AppStyle>
+      <Searchbar onSubmit={handleSearchFormSubmit} toastConfig={toastConfig} />
+      {error && toast.error('Something went wrong...')}
+      {hits && <ImageGallery hits={hits} />}
+      {totalPages > 1 && !isLoading && hits.length >= 12 && (
+        <Button onLoadMore={onLoadMore} />
+      )}
+      <ToastContainer />
+      {isLoading && <Loader />}
+    </AppStyle>
+  );
+};

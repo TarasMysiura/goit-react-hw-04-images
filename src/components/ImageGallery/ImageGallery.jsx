@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import styles from './ImageGallery.module.css';
-import ImageGalleryItem from './ImageGalleryItem/ImageGalleryItem';
+import {ImageGalleryItem} from './ImageGalleryItem/ImageGalleryItem';
 
 export const ImageGallery = ({ hits }) => {
   return (
