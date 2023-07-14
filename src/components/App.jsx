@@ -61,7 +61,6 @@ export const App = () => {
     fetchHits();
   }, [searchValue, currentPage]);
 
-  // const { isLoading, error, total, hits } = state;
   const totalPages = total / hits.length;
   return (
     <AppStyle>
